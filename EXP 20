@@ -1,0 +1,79 @@
+
+import numpy as np
+
+
+# Function to generate Walsh-Hadamard matrix
+def walsh(n):
+    """Generate orthogonal Walsh codes."""
+    H = np.array([[1]])
+
+    while H.shape[0] < n:
+        H = np.block([
+            [H, H],
+            [H, -H]
+        ])
+
+    return H
+
+
+# Initialize random generator
+rng = np.random.default_rng(11)
+
+# System parameters
+N = 8
+users = 3
+nbits = 6
+
+# Generate Walsh codes
+codes = walsh(N)[:users]
+
+print("Walsh codes (chips):")
+print(codes)
+
+# Display code correlation matrix
+print("\nCode correlation matrix / N:")
+print((codes @ codes.T) // N)
+
+# Generate random data bits (+1 and -1)
+bits = rng.integers(0, 2, (users, nbits)) * 2 - 1
+
+# Spread the data using Walsh codes
+tx = np.array([
+    np.kron(bits[u], codes[u])
+    for u in range(users)
+])
+
+# Combine all users in the channel
+channel = tx.sum(axis=0)
+
+# Add noise and perform despreading
+for sigma in (0.0, 1.0, 2.0):
+
+    rx = channel + rng.normal(0, sigma, channel.shape)
+
+    # Reshape received signal into bits and chips
+    chips = rx.reshape(nbits, N)
+
+    # Despread using user codes
+    est = np.sign(chips @ codes.T / N).T
+
+    # Count bit errors
+    errors = int((est != bits).sum())
+
+    print(f"\nnoise sigma = {sigma}: "
+          f"bit errors = {errors} of {users * nbits}")
+
+# Display transmitted and received bits
+print("\nSent     user 1:", bits[0])
+print("Received user 1:", est[0].astype(int),
+      "(last run, sigma = 2.0)")
+
+# Test using an incorrect Walsh code
+rx0 = channel.reshape(nbits, N)
+
+wrong_code = walsh(N)[7]
+
+wrong_result = np.sign(rx0 @ wrong_code / N).astype(int)
+
+print("\nWrong code (user 4 = Walsh row 7):",
+      wrong_result)

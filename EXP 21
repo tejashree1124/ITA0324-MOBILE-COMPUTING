@@ -1,0 +1,81 @@
+
+import numpy as np
+
+rng = np.random.default_rng(3)
+
+U, RB, TTI = 5, 50, 3000
+
+# Distance of each user from the base station
+dist = np.array([100, 200, 300, 400, 500.0])
+
+# Mean SNR decreases with distance
+mean_snr_db = 40 - 35 * np.log10(dist / 100)
+mean_snr = 10 ** (mean_snr_db / 10)
+
+
+def rate(snr):
+    # Shannon rate with maximum spectral efficiency of 6 bits/s/Hz
+    return np.minimum(np.log2(1 + snr), 6.0) * 180.0
+
+
+def simulate(sched):
+    thr = np.zeros(U)
+    avg = np.ones(U)
+
+    for t in range(TTI):
+
+        # Rayleigh power fading for every user and resource block
+        fade = rng.exponential(1.0, (U, RB))
+
+        # Achievable rate for each user on each resource block
+        r = rate(mean_snr[:, None] * fade)
+
+        # Select the user for each resource block
+        if sched == "RR":
+            # Round Robin scheduling
+            owner = (np.arange(RB) + t) % U
+
+        elif sched == "MAXCI":
+            # Maximum C/I scheduling
+            owner = r.argmax(axis=0)
+
+        else:
+            # Proportional Fair scheduling
+            owner = (r / avg[:, None]).argmax(axis=0)
+
+        # Calculate the bits received by each user in this TTI
+        got = np.zeros(U)
+
+        for b in range(RB):
+            got[owner[b]] += r[owner[b], b]
+
+        # Update average throughput
+        avg = 0.99 * avg + 0.01 * got
+
+        # Accumulate throughput
+        thr += got
+
+    # Convert throughput into Mbps
+    return thr / TTI / 1000
+
+
+def jain(x):
+    # Jain's fairness index
+    return x.sum() ** 2 / (len(x) * (x ** 2).sum())
+
+
+# Display results
+print(
+    f"{'Sched':6}"
+    + "".join(f"{'UE' + str(i+1):>8}" for i in range(U))
+    + f"{'Total':>9}{'Jain':>8}"
+)
+
+for s in ("RR", "MAXCI", "PF"):
+    x = simulate(s)
+
+    print(
+        f"{s:6}"
+        + "".join(f"{v:8.2f}" for v in x)
+        + f"{x.sum():9.2f}{jain(x):8.3f}"
+    )

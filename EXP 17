@@ -1,0 +1,54 @@
+
+import math
+
+def valid_cluster_sizes(limit=20):
+    """Calculate valid cluster sizes."""
+    return sorted({
+        i*i + i*j + j*j
+        for i in range(5)
+        for j in range(5)
+    } - {0})[:limit]
+
+
+def reuse_metrics(N, S=336, M=21, n=4.0):
+    # Number of channels per cell
+    k = S // N
+
+    # Co-channel reuse ratio
+    q = math.sqrt(3 * N)
+
+    # Signal-to-Interference ratio in dB
+    si_db = 10 * math.log10(q ** n / 6)
+
+    return k, M * k, q, si_db
+
+
+# Input parameters
+S, M, n, req = 336, 21, 4.0, 18.0
+
+print(f"S = {S} channels, M = {M} cells, "
+      f"path-loss exponent n = {n}, "
+      f"required S/I = {req} dB")
+
+print(f"{'N':>3} {'D/R':>6} {'ch/cell':>8} "
+      f"{'capacity':>9} {'S/I (dB)':>9}  "
+      f"Meets {req} dB?")
+
+best = None
+
+# Calculate metrics for different cluster sizes
+for N in valid_cluster_sizes(10):
+
+    k, C, q, si = reuse_metrics(N, S, M, n)
+
+    ok = si >= req
+
+    if ok and best is None:
+        best = N
+
+    print(f"{N:3d} {q:6.2f} {k:8d} "
+          f"{C:9d} {si:9.2f}  "
+          f"{'yes' if ok else 'no'}")
+
+print("Smallest cluster size that meets "
+      "the S/I requirement: N =", best)

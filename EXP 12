@@ -1,0 +1,10 @@
+Program 12 – Dashboard prototype: performance criteria of a cellular system 
+Program Design file (record these details in the table below, then attach the screenshots): FILE   P12_KPI_Dashboard   
+PAGE  Dashboard FRAME  Dashboard 1440 x 1024       grid 12 columns, margin 48, gutter 24 
+fill #F4F7FA HEADER  title "Cellular System Performance", Period [Hour | Day | Week], Cell [All v] COMP SET  KPI Card (280 x 140)  
+props: Title, Value, Unit, Trend = Up | Down | Flat, Status = Good | Warning | Alert Page 27 ITA03 – Mobile Computing Laboratory Manual KPI 
+Blocking 1.8 %  Drop 0.7 %  HO success 98.4 %  DL throughput 42 Mbps  Latency 18 ms  PRB use 71 % CHART 1  line: throughput (Mbps) vs hour 0..23 
+CHART 2  bar: blocking (%) per cell C1..C6 CHART 3  donut: handover success 98.4 | failure 1.1 | ping-pong 0.5 TABLE  
+"Cells needing attention"  columns: Cell, Blocking, Drop, Load, Status STATUS COLOURS  Good #2A9D8F   Warning #E9A23B   Alert #D64550  
+(always with icon + text) INTERACTION  Period segment | On click | Change to Period=Day/Week/Hour | Smart animate 250 ms INTERACTION  Bar 
+| On hover | Open overlay tooltip (value, cell) INTERACTION  Cell selector  | On click | Open overlay menu (manual position) 

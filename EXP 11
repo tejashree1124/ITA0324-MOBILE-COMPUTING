@@ -1,0 +1,11 @@
+Program 11 – UI prototype: a GSM service application
+Program Design file (record these details in the table below, then attach the screenshots): 
+FILE   P11_GSM_Services            
+SECTION  GSM FRAMES Services Home | Call Forwarding | Call Waiting
+| SMS Compose | USSD Dialog | Roaming Status   (390 x 844) COMP   Service Card   (358 x 72)   
+props: Icon, Title, Status = On | Off COMP   Condition Chip  props: Selected = true | false   
+COMP   Counter        (All, Busy, No answer, Not reachable) props: State = Normal | Near | Over 
+(text "n / 160") MMI LINE  below the Activate button:  "Code sent:  **21*<number>#" OVERLAYS  ov_Confirm (300 x 180) 
+ov_USSD (320 x 280, scrim 40 %) INTERACTION  Service Card | On click | Navigate to screen (Push from right) INTERACTION  Activate 
+| On click | Open overlay ov_Confirm (centre) and set Service Card status = On INTERACTION  tileUSSD 
+| On click | Open overlay ov_USSD (centre, close on outside click) INTERACTION  Back arrow   | On click | Back 

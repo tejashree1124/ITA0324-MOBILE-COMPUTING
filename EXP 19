@@ -1,0 +1,76 @@
+
+import numpy as np
+
+# System parameters
+D, P0, n, SIGMA, V = 1000.0, -30.0, 3.5, 4.0, 10.0
+# Distance (m), Power (dBm), Path loss exponent, Shadowing (dB), Speed (m/s)
+
+
+def run(H, rng, step=0.5):
+    """
+    Simulate one mobile station crossing.
+    Returns handoffs, ping-pongs and first handoff position.
+    """
+
+    serving = 0
+    handoffs = 0
+    pingpong = 0
+
+    last_t = -99
+    last_from = None
+    first_pos = None
+
+    for t in np.arange(0, D / V, step):
+
+        x = V * t
+
+        # Calculate received signal strength from both base stations
+        p = [
+            P0 - 10 * n * np.log10(max(abs(x - bx), 1))
+            + rng.normal(0, SIGMA)
+            for bx in (0, D)
+        ]
+
+        new = 1 - serving
+
+        # Handoff rule with hysteresis
+        if p[new] > p[serving] + H:
+
+            # Check ping-pong handoff
+            if last_from == new and t - last_t < 10:
+                pingpong += 1
+
+            handoffs += 1
+
+            last_from, last_t, serving = serving, t, new
+
+            # Store first handoff position
+            if first_pos is None:
+                first_pos = x
+
+    return handoffs, pingpong, first_pos
+
+
+# Fixed random seed
+rng = np.random.default_rng(1)
+
+# Number of simulation runs
+runs = 300
+
+print(f"{'H (dB)':>7} {'handoffs':>9} "
+      f"{'ping-pong':>10} {'1st handoff at (m)':>19}")
+
+# Simulate different hysteresis values
+for H in (0, 2, 4, 6, 8, 10):
+
+    res = [run(H, rng) for _ in range(runs)]
+
+    ho = np.mean([r[0] for r in res])
+    pp = np.mean([r[1] for r in res])
+
+    # Average first handoff position
+    positions = [r[2] for r in res if r[2] is not None]
+
+    pos = np.mean(positions) if positions else float('nan')
+
+    print(f"{H:7d} {ho:9.2f} {pp:10.2f} {pos:19.0f}")

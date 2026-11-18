@@ -1,0 +1,70 @@
+
+def erlang_b(E, C):
+    """Blocking probability for offered load E and C channels."""
+    b = 1.0
+
+    for m in range(1, C + 1):
+        b = E * b / (m + E * b)
+
+    return b
+
+
+def channels_needed(E, gos):
+    """Find the minimum number of channels for target GOS."""
+    C = 1
+
+    while erlang_b(E, C) > gos:
+        C += 1
+
+    return C
+
+
+def max_load(C, gos, hi=500.0):
+    """Calculate maximum offered load using bisection."""
+    lo = 0.0
+
+    for _ in range(60):
+        mid = (lo + hi) / 2
+
+        if erlang_b(mid, C) < gos:
+            lo = mid
+        else:
+            hi = mid
+
+    return lo
+
+
+# Display blocking probability
+print("Blocking probability B(E, C)")
+
+loads = (2, 5, 10, 20)
+
+print(f"{'C':>4}" +
+      "".join(f"{'E=' + str(e):>10}" for e in loads))
+
+for C in (5, 10, 20, 30):
+    print(f"{C:4d}" +
+          "".join(f"{erlang_b(e, C):10.4f}" for e in loads))
+
+
+# Offered traffic calculation
+users = 2000
+calls_per_hour = 1.5
+hold_s = 120
+
+E = users * calls_per_hour * hold_s / 3600
+
+print(f"\nOffered load: {users} users x "
+      f"{calls_per_hour} calls/h x {hold_s} s "
+      f"= {E:.1f} erlang")
+
+
+# Calculate channels required for different GOS values
+for gos in (0.05, 0.02, 0.01):
+    print(f"GOS {gos:.0%}: channels needed = "
+          f"{channels_needed(E, gos)}")
+
+
+# Maximum traffic load for 20 channels
+print(f"Max load for 20 channels at 2% blocking: "
+      f"{max_load(20, 0.02):.2f} erlang")

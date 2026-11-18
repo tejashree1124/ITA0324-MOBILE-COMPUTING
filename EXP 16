@@ -1,0 +1,62 @@
+
+import math
+
+def fspl_db(d_km, f_mhz):
+    """Free-space path loss in dB (d in km, f in MHz)."""
+    return (20 * math.log10(d_km)
+            + 20 * math.log10(f_mhz) + 32.44)
+
+
+def rx_power_dbm(pt_dbm, gt_db, gr_db, d_km, f_mhz):
+    return pt_dbm + gt_db + gr_db - fspl_db(d_km, f_mhz)
+
+
+# Input parameters
+f = 2400.0       # Frequency in MHz
+pt = 20.0        # Transmitted power in dBm
+gt = 2.0         # Transmitter antenna gain in dBi
+gr = 2.0         # Receiver antenna gain in dBi
+sens = -90.0     # Receiver sensitivity in dBm
+
+print(f"f = {f} MHz  Pt = {pt} dBm  Gt = {gt} dBi  Gr = {gr} dBi")
+
+print(f"{'d (km)':>8} {'FSPL (dB)':>10} "
+      f"{'Pr (dBm)':>10} {'Pr (W)':>12}  Link")
+
+# Calculate path loss and received power
+for d in (0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10):
+
+    pr = rx_power_dbm(pt, gt, gr, d, f)
+
+    watts = 10 ** ((pr - 30) / 10)
+
+    print(f"{d:8.2f} {fspl_db(d, f):10.2f} "
+          f"{pr:10.2f} {watts:12.3e}  "
+          f"{'OK' if pr >= sens else 'FAIL'}")
+
+
+# Calculate maximum communication range
+allowed_loss = pt + gt + gr - sens
+
+d_max = 10 ** (
+    (allowed_loss - 32.44 - 20 * math.log10(f)) / 20
+)
+
+print(f"\nSensitivity {sens} dBm -> "
+      f"allowed loss {allowed_loss:.1f} dB -> "
+      f"d_max = {d_max:.1f} km")
+
+# Effect of doubling distance
+print("Doubling the distance adds",
+      round(fspl_db(2, f) - fspl_db(1, f), 2), "dB")
+
+
+# Effect of carrier frequency
+print("\nEffect of the carrier frequency at d = 1 km "
+      "(same Pt, Gt, Gr):")
+
+for fm in (900, 1800, 2400, 3500):
+
+    print(f"  {fm:5d} MHz: "
+          f"FSPL = {fspl_db(1, fm):6.2f} dB, "
+          f"Pr = {rx_power_dbm(pt, gt, gr, 1, fm):7.2f} dBm")
